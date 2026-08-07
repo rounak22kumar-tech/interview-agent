@@ -27,7 +27,7 @@ from openai import AsyncOpenAI
 # Examples: anthropic/claude-opus-4-5 | openai/gpt-4o | google/gemini-pro-1.5
 MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-opus-4-5")
 
-MAX_QUESTIONS = 6          # Number of candidate turns before closing
+MAX_QUESTIONS = 8          # Minimum 8 questions covering at least 4 curriculum days
 _PRIMER = "Please begin the interview now."
 
 # OpenRouter requires these headers for proper attribution + rate limiting
@@ -172,7 +172,7 @@ Skipped:                    {_fmt(s['skipped'])}
 ═══ YOUR INTERVIEW RULES (follow exactly) ═══
 1. Ask ONE question per turn — never multi-part.
 2. React briefly to the candidate's answer (1 sentence), then ask your next question.
-3. Ask exactly {MAX_QUESTIONS} questions total, then close professionally.
+3. Ask exactly {MAX_QUESTIONS} questions total, spanning across at least 4 different curriculum days/topics, then close professionally.
 4. Calibrate depth to {s['depth']} level (for a {s['years']}-year {s['role']}).
 5. STRONG topics → go deep: implementation tradeoffs, edge cases, architecture.
 6. STRUGGLED topics → check foundations: "what clicked eventually?" style.
