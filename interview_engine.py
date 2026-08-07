@@ -23,6 +23,15 @@ from openai import AsyncOpenAI
 
 # ─── Constants ─────────────────────────────────────────────────────────────────
 
+MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-opus-4-5")
+MAX_QUESTIONS = 8          # Minimum 8 questions covering at least 4 curriculum days
+_PRIMER = "Please begin the interview now."
+
+_OR_HEADERS = {
+    "HTTP-Referer": "https://github.com/interview-agent",
+    "X-Title": "AI Interview Agent",
+}
+
 FALLBACK_MODELS = [
     MODEL,
     "google/gemini-2.0-flash-lite-001",
