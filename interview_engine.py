@@ -39,7 +39,27 @@ FALLBACK_MODELS = [
 ]
 
 
-async def _chat(messages: list[dict], max_tokens: int = 500) -> str:
+_client: Optional[AsyncOpenAI] = None
+
+
+def _get_client() -> AsyncOpenAI:
+    global _client
+    if _client is None:
+        key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+        if not key or key.startswith("sk-or-..."):
+            raise RuntimeError(
+                "OPENROUTER_API_KEY is not set. "
+                "Get your key at openrouter.ai → Keys, then add it to .env"
+            )
+        _client = AsyncOpenAI(
+            api_key=key,
+            base_url="https://openrouter.ai/api/v1",
+        )
+        print(f"[interview_engine] [OK] OpenRouter client ready (model: {MODEL})")
+    return _client
+
+
+async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     """Wrapper for OpenRouter chat calls with automatic model fallback."""
     client = _get_client()
     last_err = None
@@ -199,7 +219,7 @@ async def start_interview(candidate: dict) -> tuple[str, dict]:
         {"role": "user",   "content": _PRIMER},
     ]
 
-    welcome = await _chat(init_messages, max_tokens=600)
+    welcome = await _chat(init_messages, max_tokens=200)
 
     session = {
         "strategy": strategy,
@@ -235,7 +255,7 @@ async def continue_interview(
     recent_dialogue = dialogue[-10:]
     api_messages = [system_msg] + recent_dialogue
 
-    reply = await _chat(api_messages, max_tokens=500)
+    reply = await _chat(api_messages, max_tokens=200)
     session["history"].append({"role": "assistant", "content": reply})
 
     if is_final:
@@ -252,7 +272,7 @@ async def _generate_feedback(session: dict) -> dict:
 
     raw = await _chat(
         [{"role": "user", "content": prompt}],
-        max_tokens=900,
+        max_tokens=250,
     )
     raw = raw.strip()
 
