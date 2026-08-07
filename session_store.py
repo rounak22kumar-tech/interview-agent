@@ -39,9 +39,9 @@ def _is_breeth_configured() -> bool:
         return _breeth_ok
     configured = bool(BREETH_KEY) and not BREETH_KEY.startswith("ck_live_...")
     if configured:
-        print(f"[session_store] ✅ Breeth connected (project: {BREETH_PROJECT})")
+        print(f"[session_store] [OK] Breeth connected (project: {BREETH_PROJECT})")
     else:
-        print("[session_store] ℹ️  BREETH_API_KEY not set — using in-memory store.")
+        print("[session_store] [INFO] BREETH_API_KEY not set — using in-memory store.")
     _breeth_ok = configured
     return _breeth_ok
 

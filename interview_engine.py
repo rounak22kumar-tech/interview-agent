@@ -54,7 +54,7 @@ def _get_client() -> AsyncOpenAI:
             api_key=key,
             base_url="https://openrouter.ai/api/v1",
         )
-        print(f"[interview_engine] ✅ OpenRouter client ready (model: {MODEL})")
+        print(f"[interview_engine] [OK] OpenRouter client ready (model: {MODEL})")
     return _client
 
 
