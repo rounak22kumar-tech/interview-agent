@@ -262,22 +262,20 @@ async def continue_interview(
     session["question_count"] += 1
     is_final = session["question_count"] >= MAX_QUESTIONS
 
+    system_content = session["system_prompt"]
     if is_final:
-        # Clone history and patch system message with closing instruction
         name = session["strategy"]["name"]
-        closing_note = (
+        system_content += (
             f"\n\n[SYSTEM: This was the candidate's {MAX_QUESTIONS}th and final response. "
             f"Close the interview warmly. Thank {name} by name. Do NOT ask another question.]"
         )
-        messages = list(session["history"])
-        messages[0] = {
-            "role": "system",
-            "content": session["system_prompt"] + closing_note,
-        }
-    else:
-        messages = session["history"]
 
-    reply = await _chat(messages, max_tokens=500)
+    system_msg = {"role": "system", "content": system_content}
+    dialogue = [m for m in session["history"] if m["role"] != "system" and m.get("content") != _PRIMER]
+    recent_dialogue = dialogue[-10:]
+    api_messages = [system_msg] + recent_dialogue
+
+    reply = await _chat(api_messages, max_tokens=500)
     session["history"].append({"role": "assistant", "content": reply})
 
     if is_final:
