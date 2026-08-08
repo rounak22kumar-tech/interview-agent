@@ -197,17 +197,8 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
             continue
         if msg.get("content") == _PRIMER:
             continue
-        content = msg["content"]
-        content_lower = content.lower()
-        
-        # Hard-filter infrastructure/network error messages from the transcript
-        infra_keywords = ["network error", "server error", "error 429", "rate limit", "502", "timeout", "llm service error"]
-        if any(k in content_lower for k in infra_keywords):
-            # If it's a short message or looks exactly like a pasted error toast, filter it
-            if len(content) < 150 or "google api error" in content_lower:
-                print(f"[interview_engine] Filtering infra error from feedback context: {content}")
-                continue
-
+            
+        content = msg.get("content", "")
         speaker = "Interviewer" if msg["role"] == "assistant" else s["name"]
         lines.append(f"**{speaker}:** {content}")
     transcript = "\n\n".join(lines)
