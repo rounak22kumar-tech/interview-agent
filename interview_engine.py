@@ -59,10 +59,14 @@ def _get_client() -> AsyncOpenAI:
 
 
 async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
-    """Wrapper for OpenRouter chat calls with automatic model fallback."""
+    """Wrapper for OpenRouter chat calls with automatic model fallback and retries."""
     client = _get_client()
     last_err = None
-    for model in FALLBACK_MODELS:
+    
+    # Try the model list 3 times (to survive intermittent OpenRouter timeouts)
+    attempts = FALLBACK_MODELS * 3 
+    
+    for i, model in enumerate(attempts):
         try:
             resp = await client.chat.completions.create(
                 model=model,
@@ -76,7 +80,7 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
             return str(content)
         except Exception as e:
             last_err = e
-            print(f"[interview_engine] Model {model} failed ({e}), trying fallback...")
+            print(f"[interview_engine] Attempt {i+1} with {model} failed ({e}), trying fallback...")
             continue
     raise last_err
 
