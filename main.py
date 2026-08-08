@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import time
 
 import interview_engine
 import session_store
@@ -23,13 +24,35 @@ app = FastAPI(
     description="LLM-driven adaptive interviewer for AI Cohort graduates.",
 )
 
+# ── Security: Restrict CORS to known origins ──
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8000", "https://interview-agent-nmlc.onrender.com"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
+
+# ── Security: Basic IP Rate Limiting ──
+_IP_REQUESTS = {}
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    if ip not in _IP_REQUESTS:
+        _IP_REQUESTS[ip] = []
+    
+    # Filter out requests older than 60 seconds
+    _IP_REQUESTS[ip] = [t for t in _IP_REQUESTS[ip] if now - t < 60]
+    
+    # Max 20 requests per minute per IP
+    if len(_IP_REQUESTS[ip]) >= 20:
+        return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
+        
+    _IP_REQUESTS[ip].append(now)
+    return await call_next(request)
 
 DATA_DIR = Path(__file__).parent / "data"
 STATIC_DIR = Path(__file__).parent / "static"
