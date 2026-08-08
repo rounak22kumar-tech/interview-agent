@@ -63,12 +63,19 @@ def _get_client() -> AsyncOpenAI:
 async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     """Wrapper for OpenRouter chat calls with automatic model fallback and retries."""
     client = _get_client()
+    
+    # Determine fallback based on the endpoint being used
+    base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    fallback = "gemini-1.5-flash" if "googleapis.com" in base else "openrouter/free"
+    
+    # Also clean up the primary model name if hitting Google directly
+    primary_model = MODEL.replace("google/", "") if "googleapis.com" in base else MODEL
+    models_to_try = [primary_model, fallback]
+    # Create a list of 6 attempts (trying the primary and fallback 3 times each to survive intermittent network errors)
+    attempts = models_to_try * 3
+    
     last_err = None
-    
-    # Try the model list 3 times (to survive intermittent OpenRouter timeouts)
-    attempts = FALLBACK_MODELS * 3 
-    
-    for i, model in enumerate(attempts):
+    for model in attempts:
         try:
             resp = await client.chat.completions.create(
                 model=model,
