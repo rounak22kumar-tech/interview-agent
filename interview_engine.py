@@ -40,73 +40,61 @@ FALLBACK_MODELS = [
 ]
 
 
-_client: Optional[AsyncOpenAI] = None
-
-
-def _get_client() -> AsyncOpenAI:
-    global _client
-    if _client is None:
-        key = os.environ.get("OPENROUTER_API_KEY", "").strip()
-        if not key or key.startswith("sk-or-..."):
-            raise RuntimeError(
-                "OPENROUTER_API_KEY is not set. "
-                "Get your key at openrouter.ai → Keys, then add it to .env"
-            )
-        base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
-        if "googleapis.com" in base:
-            # Force the exact correct URL so typos in Render env vars don't break it
-            base = "https://generativelanguage.googleapis.com/v1beta/openai/"
-            
-        _client = AsyncOpenAI(
-            api_key=key,
-            base_url=base,
-        )
-        print(f"[interview_engine] [OK] OpenRouter client ready (model: {MODEL})")
-    return _client
-
+import httpx
 
 async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
-    """Wrapper for OpenRouter chat calls with automatic model fallback and retries."""
-    client = _get_client()
-    
-    # Determine fallback based on the endpoint being used
-    base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
-    # Clean up the model names for Google AI Studio which requires exact aliases
-    if "googleapis.com" in base:
-        primary_model = "gemini-1.5-flash"
-        fallback = "gemini-1.5-flash"
-    else:
-        primary_model = MODEL
-        fallback = "openrouter/free"
+    """Native Google AI Studio REST API call."""
+    key = os.environ.get("GEMINI_API_KEY", os.environ.get("OPENROUTER_API_KEY", "")).strip()
+    if not key or key.startswith("sk-or-..."):
+        raise RuntimeError("API key is not set in GEMINI_API_KEY.")
         
-    models_to_try = [primary_model, fallback]
-    # Create a list of 6 attempts (trying the primary and fallback 3 times each to survive intermittent network errors)
-    attempts = models_to_try * 3
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
     
-    last_err = None
-    for i, model in enumerate(attempts):
-        try:
-            resp = await client.chat.completions.create(
-                model=model,
-                max_tokens=max_tokens,
-                messages=messages,
-                extra_headers=_OR_HEADERS,
-            )
-            content = resp.choices[0].message.content
-            if not content:
-                raise ValueError("Model returned empty or None content.")
+    contents = []
+    system_instruction = None
+    for m in messages:
+        if m["role"] == "system":
+            system_instruction = {"parts": [{"text": m["content"]}]}
+        else:
+            role = "model" if m["role"] == "assistant" else "user"
+            contents.append({"role": role, "parts": [{"text": m["content"]}]})
             
-            # Strip out leaked reasoning tags (e.g. from DeepSeek-R1 models)
-            import re
-            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
-            if not content:
-                raise ValueError("Model returned only reasoning and no actual reply.")
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": 0.7
+        }
+    }
+    if system_instruction:
+        payload["systemInstruction"] = system_instruction
+        
+    last_err = None
+    async with httpx.AsyncClient() as client:
+        # Try 3 times to survive intermittent network errors
+        for i in range(3):
+            try:
+                resp = await client.post(url, json=payload, timeout=30.0)
+                if resp.status_code != 200:
+                    raise Exception(f"Google API Error {resp.status_code}: {resp.text}")
                 
-            return str(content)
-        except Exception as e:
-            last_err = e
-            print(f"[interview_engine] Attempt {i+1} with {model} failed ({e}), trying fallback...")
-            continue
+                data = resp.json()
+                try:
+                    content = data["candidates"][0]["content"]["parts"][0]["text"]
+                except (KeyError, IndexError):
+                    raise ValueError(f"Unexpected response structure: {data}")
+                    
+                import re
+                content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+                if not content:
+                    raise ValueError("Model returned only reasoning and no actual reply.")
+                    
+                return str(content)
+            except Exception as e:
+                last_err = e
+                print(f"[interview_engine] Attempt {i+1} failed ({e}), retrying...")
+                continue
+                
     raise last_err
 
 
