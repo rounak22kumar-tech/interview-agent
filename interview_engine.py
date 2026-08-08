@@ -75,7 +75,7 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     attempts = models_to_try * 3
     
     last_err = None
-    for model in attempts:
+    for i, model in enumerate(attempts):
         try:
             resp = await client.chat.completions.create(
                 model=model,
