@@ -107,8 +107,20 @@ def _curriculum() -> dict:
     global _CURRICULUM
     if _CURRICULUM is None:
         path = Path(__file__).parent / "data" / "curriculum.json"
-        _CURRICULUM = json.loads(path.read_text())
+        with open(path) as f:
+            _CURRICULUM = json.load(f)
     return _CURRICULUM
+
+
+# Load shared UI errors to prevent them from leaking into chat history
+_UI_ERRORS = []
+try:
+    _errors_path = Path(__file__).parent / "static" / "errors.json"
+    with open(_errors_path) as f:
+        err_data = json.load(f)
+        _UI_ERRORS = list(err_data.get("UI_ERRORS", {}).values()) + err_data.get("BACKEND_ERROR_PREFIXES", [])
+except Exception as e:
+    print(f"[interview_engine] Warning: Could not load errors.json: {e}")
 
 
 # ─── Candidate Analysis ────────────────────────────────────────────────────────
@@ -192,17 +204,6 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
     lines = []
     # Trim messages to ensure the feedback prompt doesn't blow the token limit
     trimmed_history = _trim_messages(history)
-    # Exact UI error strings that might have been pasted by a tester
-    ui_errors = [
-        "Network error. Check the server connection.",
-        "Network error. Check that the server is running.",
-        "Failed to load candidate data.",
-        "Server error starting interview.",
-        "Server error.",
-        "LLM service error: Google API Error",
-        "LLM service error:"
-    ]
-    
     for msg in trimmed_history:
         if msg["role"] == "system":
             continue
@@ -211,9 +212,9 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
             
         content = msg.get("content", "")
         # Substring strip exact UI errors to prevent feedback contamination
-        for err in ui_errors:
+        for err in _UI_ERRORS:
             if err in content:
-                content = content.split(err)[0]  # Or content.replace(err, "")
+                content = content.replace(err, "").strip()
                 
         # If the whole message was just an error, skip it entirely
         if not content.strip():
@@ -305,6 +306,14 @@ async def continue_interview(
     Process a candidate turn via OpenRouter.
     Returns (reply, done, feedback_or_None).
     """
+    # Clean message of UI error strings to prevent leaking into LIVE conversation
+    for err in _UI_ERRORS:
+        if err in message:
+            message = message.replace(err, "").strip()
+            
+    if not message:
+        return "It looks like a system error occurred. Please ignore it and provide your technical answer.", False, None
+
     session["history"].append({"role": "user", "content": message})
     session["question_count"] += 1
     is_final = session["question_count"] >= MAX_QUESTIONS

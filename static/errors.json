@@ -1,0 +1,13 @@
+{
+  "UI_ERRORS": {
+    "NETWORK_CONNECTION": "Network error. Check the server connection.",
+    "NETWORK_RUNNING": "Network error. Check that the server is running.",
+    "LOAD_CANDIDATE": "Failed to load candidate data.",
+    "SERVER_START": "Server error starting interview.",
+    "SERVER_GENERIC": "Server error."
+  },
+  "BACKEND_ERROR_PREFIXES": [
+    "LLM service error: Google API Error",
+    "LLM service error:"
+  ]
+}

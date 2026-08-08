@@ -1022,12 +1022,21 @@
 const MAX_QUESTIONS = 8;
 let state = {
   candidates: [],
-  selected: null,       // full candidate object from /api/candidates/:id
-  selectedSummary: null,// summary object from /api/candidates list
+  selected: null,
   sessionId: null,
   questionCount: 0,
-  waiting: false,
   done: false,
+  waiting: false,
+};
+
+let ERRORS = {
+  UI_ERRORS: {
+    NETWORK_CONNECTION: "Network error. Check the server connection.",
+    NETWORK_RUNNING: "Network error. Check that the server is running.",
+    LOAD_CANDIDATE: "Failed to load candidate data.",
+    SERVER_START: "Server error starting interview.",
+    SERVER_GENERIC: "Server error."
+  }
 };
 
 // ──────────────────────────────────────────────────────────────────
@@ -1063,11 +1072,18 @@ function showScreen(id) {
 // ──────────────────────────────────────────────────────────────────
 async function loadCandidates() {
   try {
+    const errRes = await fetch('/static/errors.json');
+    if (errRes.ok) ERRORS = await errRes.json();
+  } catch (e) {
+    console.warn("Could not load errors.json, using defaults.");
+  }
+
+  const sel = document.getElementById('candidate-select');
+  try {
     const res = await fetch('/api/candidates');
     const data = await res.json();
     state.candidates = data.candidates;
 
-    const sel = document.getElementById('candidate-select');
     sel.innerHTML = '<option value="">— Choose a candidate —</option>';
     data.candidates.forEach(c => {
       const opt = document.createElement('option');
@@ -1076,7 +1092,7 @@ async function loadCandidates() {
       sel.appendChild(opt);
     });
   } catch (e) {
-    toast('Could not load candidates. Is the server running?');
+    toast(ERRORS.UI_ERRORS.NETWORK_RUNNING);
   }
 }
 
@@ -1094,13 +1110,17 @@ document.getElementById('candidate-select').addEventListener('change', async fun
   try {
     const res = await fetch(`/api/candidates/${id}`);
     const candidate = await res.json();
+    if (!candidate) {
+        toast(ERRORS.UI_ERRORS.LOAD_CANDIDATE);
+        return;
+    }
     state.selected = candidate;
     state.selectedSummary = state.candidates.find(c => c.id === id);
     renderProfileCard(candidate, state.selectedSummary);
     document.getElementById('start-btn').disabled = false;
     document.getElementById('start-btn-text').textContent = `Start Interview with ${candidate.member.name.split(' ')[0]}`;
   } catch (e) {
-    toast('Failed to load candidate data.');
+    toast(ERRORS.UI_ERRORS.LOAD_CANDIDATE);
   }
 });
 
@@ -1167,18 +1187,19 @@ async function startInterview() {
     removeTyping();
 
     if (!res.ok) {
-      toast(data.detail || 'Server error starting interview.');
-      state.waiting = false;
+      toast(data.detail || ERRORS.UI_ERRORS.SERVER_START);
+      document.getElementById('start-btn').disabled = false;
       return;
     }
 
     addMessage('agent', data.reply);
     enableInput();
     state.waiting = false;
+    updateProgressDots(0);
   } catch (e) {
     removeTyping();
-    toast('Network error. Check that the server is running.');
-    state.waiting = false;
+    toast(ERRORS.UI_ERRORS.NETWORK_RUNNING);
+    document.getElementById('start-btn').disabled = false;
   }
 }
 
@@ -1247,7 +1268,7 @@ async function sendMessage() {
     removeTyping();
 
     if (!res.ok) {
-      toast(data.detail || 'Server error.');
+      toast(data.detail || ERRORS.UI_ERRORS.SERVER_GENERIC);
       state.waiting = false;
       enableInput();
       return;
@@ -1266,7 +1287,7 @@ async function sendMessage() {
     state.waiting = false;
   } catch (e) {
     removeTyping();
-    toast('Network error. Check the server connection.');
+    toast(ERRORS.UI_ERRORS.NETWORK_CONNECTION);
     state.waiting = false;
     enableInput();
   }
