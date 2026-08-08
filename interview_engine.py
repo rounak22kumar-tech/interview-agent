@@ -197,8 +197,19 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
             continue
         if msg.get("content") == _PRIMER:
             continue
+        content = msg["content"]
+        content_lower = content.lower()
+        
+        # Hard-filter infrastructure/network error messages from the transcript
+        infra_keywords = ["network error", "server error", "error 429", "rate limit", "502", "timeout", "llm service error"]
+        if any(k in content_lower for k in infra_keywords):
+            # If it's a short message or looks exactly like a pasted error toast, filter it
+            if len(content) < 150 or "google api error" in content_lower:
+                print(f"[interview_engine] Filtering infra error from feedback context: {content}")
+                continue
+
         speaker = "Interviewer" if msg["role"] == "assistant" else s["name"]
-        lines.append(f"**{speaker}:** {msg['content']}")
+        lines.append(f"**{speaker}:** {content}")
     transcript = "\n\n".join(lines)
 
 
@@ -215,6 +226,10 @@ COURSE SIGNALS:
 
 TRANSCRIPT:
 {transcript}
+
+CRITICAL RULES FOR FEEDBACK:
+1. Focus strictly on the candidate's technical answers and course-to-interview consistency.
+2. IGNORE any system-level events, API errors, rate limits, timeouts, or network errors that may have leaked into the transcript. These are backend infrastructure failures and have NOTHING to do with the candidate's performance. DO NOT mention them in the summary, gaps, or next steps.
 
 Write a structured feedback report. Return ONLY a valid JSON object — no markdown, no explanation:
 
