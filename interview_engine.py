@@ -70,7 +70,10 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
                 messages=messages,
                 extra_headers=_OR_HEADERS,
             )
-            return resp.choices[0].message.content
+            content = resp.choices[0].message.content
+            if not content:
+                raise ValueError("Model returned empty or None content.")
+            return str(content)
         except Exception as e:
             last_err = e
             print(f"[interview_engine] Model {model} failed ({e}), trying fallback...")
