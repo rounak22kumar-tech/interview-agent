@@ -1,31 +1,26 @@
 # AI Interview Agent
 
-LLM-driven adaptive interviewer for AI Cohort graduates. Hits the `/api/interview` contract from the technical spec, personalizing every session using each candidate's course performance data.
+LLM-driven adaptive interviewer for AI Cohort graduates. Hits the `/api/interview` contract from the technical spec, personalizing every session using each candidate's course performance data. 
+
+**Live Demo**: [https://interview-agent-nmlc.onrender.com/](https://interview-agent-nmlc.onrender.com/)
 
 ---
 
-## How It Works
+## 🌟 Hackathon Features
 
-```
-POST /api/interview  {sessionId, candidate}   → welcome + Q1
-POST /api/interview  {sessionId, message}     → next question
-…
-POST /api/interview  {sessionId, message}     → {done:true, feedback:{…}}
-```
-
-**Adaptive logic** (in `interview_engine.py`):
-
-| Signal | Behavior |
-|--------|----------|
-| Passed on 1st attempt | Probe deeper — tradeoffs, edge cases, architecture |
-| Passed on 3+ attempts | Check foundations — ask what finally clicked |
-| Did not pass | Surface the gap constructively |
-| Skipped | Probe gently — "what's your current understanding?" |
-| Job role / years | Calibrate depth: foundational / intermediate / expert |
+1. **Adaptive Logic:** Questions scale in difficulty based on the candidate's actual course performance (Mastered, Struggled, Failed, Skipped).
+2. **LLM Gateway (OpenRouter):** Built to be model-agnostic. Currently routes to `anthropic/claude-opus-4-5` with automatic fallback to `openrouter/auto` if the primary model goes down.
+3. **Session Memory (Breeth):** Integrates with the Breeth API for persistent, intent-aware session tracking (with in-memory fallback).
+4. **Token Budgeting:** Uses sliding window context (last 10 turns) and per-message truncation to stay safely within free-tier OpenRouter token limits.
+5. **Bulletproof Feedback JSON:** If the LLM times out or fails on the final 8th turn, the backend gracefully catches it and generates a dynamic fallback JSON so the UI never crashes.
+6. **Security Hardened:** 
+   - Strict IP Rate Limiting (20 req/min)
+   - Locked down CORS (allows local & Render domains only)
+   - Anti-prompt injection rules built directly into the system prompt
 
 ---
 
-## Quick Start
+## 🚀 Quick Start (Local)
 
 ```bash
 # 1. Clone & enter
@@ -36,7 +31,7 @@ pip install -r requirements.txt
 
 # 3. Configure
 cp .env.example .env
-# → add ANTHROPIC_API_KEY to .env
+# → add OPENROUTER_API_KEY to .env
 
 # 4. Run
 uvicorn main:app --reload
@@ -48,7 +43,7 @@ uvicorn main:app --reload
 
 ---
 
-## API Reference
+## 📡 API Reference
 
 ### `POST /api/interview`
 
@@ -68,12 +63,7 @@ uvicorn main:app --reload
 }
 ```
 
-**Response** (ongoing):
-```json
-{ "reply": "...", "done": false }
-```
-
-**Response** (final):
+**Response** (final 8th turn):
 ```json
 {
   "reply": "Thank you, this concludes our interview.",
@@ -87,65 +77,36 @@ uvicorn main:app --reload
 }
 ```
 
-### `GET /api/candidates`
-Returns summary list of all 20 candidates.
-
-### `GET /api/candidates/{id}`
-Returns full candidate object (pass as `candidate` in first interview call).
-
-### `GET /health`
-Health check — returns `{ "status": "ok", "active_sessions": N }`.
-
 ---
 
-## Deploy to Render
+## 🏗️ Project Structure
 
-1. Push repo to GitHub
-2. New Web Service → connect repo
-3. Build: `pip install -r requirements.txt`
-4. Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add env var: `ANTHROPIC_API_KEY` = your key
-6. Deploy → get your live URL
-
-Or use the included `render.yaml` for Blueprint deploy.
-
----
-
-## Project Structure
-
-```
+```text
 interview-agent/
-├── main.py               # FastAPI app + all routes
-├── models.py             # Pydantic request/response schemas
-├── session_store.py      # In-memory sessions (Breeth-ready)
-├── interview_engine.py   # Claude adaptive logic + prompts
+├── main.py               # FastAPI app, Routes, Rate Limiting, CORS
+├── models.py             # Pydantic schemas
+├── session_store.py      # Breeth API persistence + in-memory fallback
+├── interview_engine.py   # Adaptive logic, System prompts, Token truncation
+├── test_e2e.py           # Automated 8-question judge simulation
 ├── data/
 │   ├── curriculum.json   # 31-day curriculum question bank
 │   └── candidates.json   # 20 candidates with mission data
 ├── static/
-│   └── index.html        # Demo UI (no build step)
-├── requirements.txt
-├── .env.example
-├── render.yaml
-└── AI_USAGE_LOG.md       # Hackathon required artifact
+│   └── index.html        # Premium dark-mode UI
+├── requirements.txt      
+├── render.yaml           # Automated Render deployment config
+├── Dockerfile & Procfile # Universal deployment fallbacks
+├── PROJECT_CONTEXT.md    # Full context dump for AI handoffs
+└── AI_USAGE_LOG.md       # Hackathon required AI session log
 ```
 
 ---
 
-## Breeth Integration (optional)
-
-The `session_store.py` uses in-memory storage by default. To persist sessions across restarts via Breeth:
-
-1. Set `BREETH_API_KEY` in `.env`
-2. Replace the `_sessions` dict in `session_store.py` with Breeth `save`/`search` calls
-3. See `session_store.py` for the exact comment/hook
-
----
-
-## Environment Variables
+## 🔐 Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | ✅ | — | Your Claude API key |
-| `ANTHROPIC_MODEL` | ❌ | `claude-opus-4-5` | Override the model |
+| `OPENROUTER_API_KEY` | ✅ | — | Your OpenRouter API key |
+| `OPENROUTER_MODEL` | ❌ | `anthropic/claude-opus-4-5` | Override the primary LLM |
 | `BREETH_API_KEY` | ❌ | — | Enable Breeth session persistence |
+| `BREETH_PROJECT_ID` | ❌ | `interview-agent` | Scope for Breeth episodes |
