@@ -7,7 +7,7 @@ import json
 import sys
 import time
 
-BASE = "http://localhost:8000"
+BASE = "https://interview-agent-nmlc.onrender.com"
 SESSION_ID = f"e2e-test-{int(time.time())}"
 
 # Load first candidate
@@ -54,7 +54,10 @@ for i, answer in enumerate(ANSWERS, start=1):
     data = r.json()
     print(f"  Status: {r.status_code}")
     print(f"  done: {data['done']}")
-    print(f"  reply: {data['reply'][:100]}...")
+    try:
+        print(f"  reply: {data['reply'][:100]}...")
+    except UnicodeEncodeError:
+        print(f"  reply: {data['reply'][:100].encode('ascii', 'ignore').decode('ascii')}...")
 
     if i < 8:
         assert data["done"] == False, f"Turn {i} should not be done yet"
