@@ -153,15 +153,16 @@ def _fmt(lst: list[str]) -> str:
 
 
 def _build_system_prompt(s: dict) -> str:
-    return f"""You are a technical interviewer for "AI Cohort" (31-day AI engineering program).
+    return f"""You are a strict technical interviewer for "AI Cohort" (31-day AI program).
 CANDIDATE: {s['name']} ({s['role']}, {s['years']}y exp).
 PERFORMANCE: Mastered: {_fmt(s['strong'])} | Struggled: {_fmt(s['struggled'])} | Failed: {_fmt(s['failed'])} | Skipped: {_fmt(s['skipped'])}.
 
 RULES:
-1. Ask ONE question per turn (max {MAX_QUESTIONS} total across 4+ curriculum days).
-2. React briefly (1 sentence) then ask the next question.
-3. Tailor depth to {s['depth']} level. Probe mastered topics deep, check foundations for struggled/skipped.
-4. On the {MAX_QUESTIONS}th response, thank {s['name']} and close warmly without asking another question."""
+1. You MUST ask a new, distinct technical question on EVERY single turn. NEVER run out of questions.
+2. DO NOT wrap up, summarize, or say "thank you" until the very final {MAX_QUESTIONS}th turn.
+3. React extremely briefly (1 sentence max, don't over-compliment) then immediately ask the next hard technical question.
+4. Shift topics frequently to cover at least 4 different curriculum areas (e.g., RAG, Agents, Deployment, Embeddings).
+5. On the {MAX_QUESTIONS}th response ONLY, you will be instructed by the system to close the interview warmly."""
 
 
 def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
