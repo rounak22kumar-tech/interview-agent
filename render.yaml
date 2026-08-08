@@ -1,11 +1,17 @@
 services:
   - type: web
     name: interview-agent
-    env: python
+    runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: ANTHROPIC_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false          # set manually in Render dashboard
-      - key: ANTHROPIC_MODEL
-        value: claude-opus-4-5
+      - key: OPENROUTER_MODEL
+        value: anthropic/claude-opus-4-5
+      - key: BREETH_API_KEY
+        sync: false
+      - key: BREETH_PROJECT_ID
+        value: interview-agent
+      - key: PYTHON_VERSION
+        value: "3.11.9"
