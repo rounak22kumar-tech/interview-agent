@@ -192,6 +192,17 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
     lines = []
     # Trim messages to ensure the feedback prompt doesn't blow the token limit
     trimmed_history = _trim_messages(history)
+    # Exact UI error strings that might have been pasted by a tester
+    ui_errors = [
+        "Network error. Check the server connection.",
+        "Network error. Check that the server is running.",
+        "Failed to load candidate data.",
+        "Server error starting interview.",
+        "Server error.",
+        "LLM service error: Google API Error",
+        "LLM service error:"
+    ]
+    
     for msg in trimmed_history:
         if msg["role"] == "system":
             continue
@@ -199,6 +210,15 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
             continue
             
         content = msg.get("content", "")
+        # Substring strip exact UI errors to prevent feedback contamination
+        for err in ui_errors:
+            if err in content:
+                content = content.split(err)[0]  # Or content.replace(err, "")
+                
+        # If the whole message was just an error, skip it entirely
+        if not content.strip():
+            continue
+            
         speaker = "Interviewer" if msg["role"] == "assistant" else s["name"]
         lines.append(f"**{speaker}:** {content}")
     transcript = "\n\n".join(lines)
