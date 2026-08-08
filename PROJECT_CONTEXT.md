@@ -70,11 +70,15 @@ interview-agent/
 ├── render.yaml             # Render.com deployment blueprint
 ├── AI_USAGE_LOG.md         # Hackathon compliance — AI tools used log
 ├── README.md               # Project documentation
+├── test_filter.py          # Unit test for UI error stripping/regex boundaries
+├── test_skip.py            # E2E test for multi-turn flow & skip logic
+├── test_live_error_paste.py# E2E test simulating UI error string pasting mid-chat
 ├── data/
 │   ├── curriculum.json     # 31-day AI Cohort curriculum (8 modules)
 │   └── candidates.json     # 20 candidate profiles with mission results
 └── static/
-    └── index.html          # Demo UI (dark-mode, single-page app)
+    ├── index.html          # Demo UI (dark-mode, single-page app)
+    └── errors.json         # Shared exact-match error strings for UI & Backend filter
 ```
 
 ---
@@ -109,10 +113,11 @@ interview-agent/
 | `_get_client()` | Lazy singleton `AsyncOpenAI` client pointed at OpenRouter |
 | `_chat(messages, max_tokens=200)` | Wrapper with automatic model fallback on error |
 | `analyze_candidate(candidate)` | Parses missions into strategy: strong/efficient/struggled/failed/skipped |
+| `_sanitize_message(content)` | Regex strips dynamic UI error substrings without deleting candidate answers |
 | `_build_system_prompt(strategy)` | Compact system prompt (~200 tokens) with interview rules |
 | `_build_feedback_prompt(strategy, history)` | Transcript + JSON output schema for feedback generation |
 | `start_interview(candidate)` | Creates session, sends primer, returns welcome + session dict |
-| `continue_interview(session, message)` | Sliding window context, handles final turn + feedback |
+| `continue_interview(session, message)` | Sliding window context, sanitizes input, handles final turn + feedback |
 | `_generate_feedback(session)` | Dedicated LLM call for structured JSON feedback with fallback |
 
 **Adaptive Logic (from `analyze_candidate`):**
@@ -174,8 +179,11 @@ FeedbackModel:     summary (str), strengths (list[str]), gaps (list[str]), next 
 - Interview starts (welcome message from Claude)
 - Multi-turn conversation works
 - Model fallback chain works
+- Strict filtering of exact UI error strings injected by the user (protects live flow & feedback)
 - `.env` keys are configured and valid
 - GitHub repo is live: https://github.com/rounak22kumar-tech/interview-agent
+- **Deployed live to Render.com**: `https://interview-agent-nmlc.onrender.com`
+- **Full E2E suite passes** (verifying limits, empty inputs, skipping, error string paste)
 
 ### ⚠️ Known Issues
 
@@ -220,22 +228,11 @@ uvicorn main:app --reload --port 8000
 
 ## 7. Priority Next Steps
 
-### HIGH — Must Do for Submission
-1. **Add OpenRouter credits ($5)** or switch to a truly free model to eliminate 402 errors entirely
-2. **Complete a full 8-question end-to-end test** and verify feedback JSON output
-3. **Deploy to Railway** (or Render) for a live public URL — judges will test against the URL
-4. **Update `AI_USAGE_LOG.md`** with all tools actually used during development
-
-### MEDIUM — Improves Score
-5. **Fix Breeth integration** — create project in Breeth dashboard, verify API payload format, fix 403
-6. **Fix fallback model slugs** — find currently available free models on OpenRouter
-7. **Clean up `requirements.txt`** — remove unused `supabase` dependency
-8. **Graceful error handling** — return user-friendly JSON errors instead of 500 on LLM failures
-
 ### LOW — Polish
-9. **Update README.md** with actual deployment URL and setup instructions
-10. **Add error retry with exponential backoff** in `_chat()`
-11. **Rate limiting** on `/api/interview` endpoint
+1. **Fix Breeth integration** — create project in Breeth dashboard, verify API payload format, fix 403
+2. **Graceful error handling** — return user-friendly JSON errors instead of 500 on LLM failures
+3. **Add error retry with exponential backoff** in `_chat()`
+4. **Rate limiting** on `/api/interview` endpoint
 
 ---
 
@@ -267,5 +264,5 @@ GitHub: https://github.com/rounak22kumar-tech/interview-agent
 
 ---
 
-*Last updated: 2026-08-08 00:40 IST*
+*Last updated: 2026-08-08 21:00 IST*
 *Total codebase: ~600 lines of Python + ~1200 lines of HTML/CSS/JS*
