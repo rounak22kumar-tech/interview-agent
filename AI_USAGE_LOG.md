@@ -60,6 +60,16 @@ This log documents all AI-assisted steps taken during the development of this pr
 **Prompt intent:** Created and ran automated e2e test simulating a full 8-question interview (start → 8 answers → feedback JSON → session rejection).
 **Outcome:** `test_e2e.py` — all 10 checks passed, feedback JSON validated with correct schema.
 
+### Session 11 — Defense-in-Depth UI Error Filtering
+**Tool:** Antigravity (Gemini)
+**Prompt intent:** Prevent raw backend system error logs (like 502 rate limits or network timeouts) from being copy-pasted into the chat and leaking into the candidate's transcript, which was confusing the final LLM feedback evaluation.
+**Outcome:** Created a regex-based `_sanitize_message` filter that cleanly strips dynamic UI error substrings without deleting candidate answers before/after the error block, keeping live conversation flow perfectly clean. Extracted error messages into a shared `static/errors.json` (DRY pattern).
+
+### Session 12 — Skip Logic & Live Error Test Cases
+**Tool:** Antigravity (Gemini)
+**Prompt intent:** Ensure candidate skips are properly registered and evaluate how the system handles dynamic errors pasted mid-sentence.
+**Outcome:** Added `test_skip.py`, `test_filter.py`, and `test_live_error_paste.py` verifying full end-to-end reliability against adversarial edge cases.
+
 ---
 
 ## Model Used at Runtime
@@ -79,6 +89,7 @@ This log documents all AI-assisted steps taken during the development of this pr
 4. **MAX_QUESTIONS = 8** — Set to meet hackathon minimum requirement of 8 questions covering 4+ curriculum days.
 5. **Token budget management** — AI designed the sliding window + per-message truncation strategy to stay within free-tier limits.
 6. **Model fallback chain** — AI recommended `openrouter/free` over hardcoded free slugs that rotate frequently.
+7. **Defense-in-depth substring removal** — AI designed the regex filter that precisely matches static UI errors while preserving candidate technical answers before and after the system error.
 
 ---
 

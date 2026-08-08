@@ -13,7 +13,8 @@ LLM-driven adaptive interviewer for AI Cohort graduates. Hits the `/api/intervie
 3. **Session Memory (Breeth):** Integrates with the Breeth API for persistent, intent-aware session tracking (with in-memory fallback).
 4. **Token Budgeting:** Uses sliding window context (last 10 turns) and per-message truncation to stay safely within free-tier OpenRouter token limits.
 5. **Bulletproof Feedback JSON:** If the LLM times out or fails on the final 8th turn, the backend gracefully catches it and generates a dynamic fallback JSON so the UI never crashes.
-6. **Security Hardened:** 
+6. **Defense-in-Depth Error Filtering:** Protects live LLM conversation flows and final feedback generation by dynamically stripping pasted UI system errors (e.g. 502/429 network timeouts) via a precise regex matching system, ensuring candidates are only evaluated on actual technical answers.
+7. **Security Hardened:** 
    - Strict IP Rate Limiting (20 req/min)
    - Locked down CORS (allows local & Render domains only)
    - Anti-prompt injection rules built directly into the system prompt
@@ -86,13 +87,17 @@ interview-agent/
 ├── main.py               # FastAPI app, Routes, Rate Limiting, CORS
 ├── models.py             # Pydantic schemas
 ├── session_store.py      # Breeth API persistence + in-memory fallback
-├── interview_engine.py   # Adaptive logic, System prompts, Token truncation
+├── interview_engine.py   # Adaptive logic, System prompts, Token truncation, Error filtering
 ├── test_e2e.py           # Automated 8-question judge simulation
+├── test_skip.py          # E2E multi-turn skip logic and feedback test
+├── test_filter.py        # Regex UI-error bounds unit test
+├── test_live_error_paste.py # Simulates mid-interview copy-paste system error
 ├── data/
 │   ├── curriculum.json   # 31-day curriculum question bank
 │   └── candidates.json   # 20 candidates with mission data
 ├── static/
-│   └── index.html        # Premium dark-mode UI
+│   ├── index.html        # Premium dark-mode UI
+│   └── errors.json       # Shared dynamic error configs (DRY pattern)
 ├── requirements.txt      
 ├── render.yaml           # Automated Render deployment config
 ├── Dockerfile & Procfile # Universal deployment fallbacks
