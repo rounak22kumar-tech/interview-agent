@@ -48,7 +48,7 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     if not key or key.startswith("sk-or-..."):
         raise RuntimeError("API key is not set in GEMINI_API_KEY.")
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={key}"
     
     contents = []
     system_instruction = None
