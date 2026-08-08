@@ -260,7 +260,7 @@ async def start_interview(candidate: dict) -> tuple[str, dict]:
         {"role": "user",   "content": _PRIMER},
     ]
 
-    welcome = await _chat(init_messages, max_tokens=200)
+    welcome = await _chat(init_messages, max_tokens=1024)
 
     session = {
         "strategy": strategy,
@@ -298,7 +298,7 @@ async def continue_interview(
     # Truncate individual messages to prevent blowing input token ceiling
     api_messages = [system_msg] + _trim_messages(recent_dialogue)
 
-    reply = await _chat(api_messages, max_tokens=200)
+    reply = await _chat(api_messages, max_tokens=1024)
     session["history"].append({"role": "assistant", "content": reply})
 
     if is_final:
@@ -316,7 +316,7 @@ async def _generate_feedback(session: dict) -> dict:
     try:
         raw = await _chat(
             [{"role": "user", "content": prompt}],
-            max_tokens=250,
+            max_tokens=2048,
         )
         raw = raw.strip()
         # Strip markdown code fences if the model wraps JSON in them
