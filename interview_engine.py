@@ -52,9 +52,14 @@ def _get_client() -> AsyncOpenAI:
                 "OPENROUTER_API_KEY is not set. "
                 "Get your key at openrouter.ai → Keys, then add it to .env"
             )
+        base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+        if "googleapis.com" in base:
+            # Force the exact correct URL so typos in Render env vars don't break it
+            base = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            
         _client = AsyncOpenAI(
             api_key=key,
-            base_url=os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
+            base_url=base,
         )
         print(f"[interview_engine] [OK] OpenRouter client ready (model: {MODEL})")
     return _client
@@ -68,8 +73,8 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
     # Clean up the model names for Google AI Studio which requires exact aliases
     if "googleapis.com" in base:
-        primary_model = "gemini-1.5-flash-latest"
-        fallback = "gemini-1.5-flash-latest"
+        primary_model = "gemini-1.5-flash"
+        fallback = "gemini-1.5-flash"
     else:
         primary_model = MODEL
         fallback = "openrouter/free"
