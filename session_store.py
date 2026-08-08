@@ -37,7 +37,7 @@ def _is_breeth_configured() -> bool:
     global _breeth_ok
     if _breeth_ok is not None:
         return _breeth_ok
-    configured = bool(BREETH_KEY) and not BREETH_KEY.startswith("ck_live_...")
+    configured = bool(BREETH_KEY) and len(BREETH_KEY) > 10
     if configured:
         print(f"[session_store] [OK] Breeth connected (project: {BREETH_PROJECT})")
     else:
