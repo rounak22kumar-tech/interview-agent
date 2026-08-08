@@ -38,7 +38,17 @@ _IP_REQUESTS = {}
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    ip = request.client.host if request.client else "unknown"
+    # Bypass rate limiting for health checks
+    if request.url.path == "/health":
+        return await call_next(request)
+
+    # Use X-Forwarded-For to get real IP behind Render's load balancer
+    ip = request.headers.get("X-Forwarded-For", "")
+    if not ip:
+        ip = request.client.host if request.client else "unknown"
+    else:
+        ip = ip.split(",")[0].strip()
+
     now = time.time()
     
     if ip not in _IP_REQUESTS:
@@ -47,8 +57,8 @@ async def rate_limit_middleware(request: Request, call_next):
     # Filter out requests older than 60 seconds
     _IP_REQUESTS[ip] = [t for t in _IP_REQUESTS[ip] if now - t < 60]
     
-    # Max 20 requests per minute per IP
-    if len(_IP_REQUESTS[ip]) >= 20:
+    # Max 30 requests per minute per IP (increased slightly to be safe)
+    if len(_IP_REQUESTS[ip]) >= 30:
         return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
         
     _IP_REQUESTS[ip].append(now)
