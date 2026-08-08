@@ -34,7 +34,7 @@ _OR_HEADERS = {
 
 FALLBACK_MODELS = [
     MODEL,
-    "openrouter/auto",     # OpenRouter's auto-router picks the best available free model
+    "openrouter/free",     # OpenRouter's free-router picks the best available free model
 ]
 
 

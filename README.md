@@ -9,7 +9,7 @@ LLM-driven adaptive interviewer for AI Cohort graduates. Hits the `/api/intervie
 ## 🌟 Hackathon Features
 
 1. **Adaptive Logic:** Questions scale in difficulty based on the candidate's actual course performance (Mastered, Struggled, Failed, Skipped).
-2. **LLM Gateway (OpenRouter):** Built to be model-agnostic. Currently routes to `anthropic/claude-opus-4-5` with automatic fallback to `openrouter/auto` if the primary model goes down.
+2. **LLM Gateway (OpenRouter):** Built to be model-agnostic. Currently routes to `anthropic/claude-opus-4-5` with automatic fallback to `openrouter/free` if the primary model goes down.
 3. **Session Memory (Breeth):** Integrates with the Breeth API for persistent, intent-aware session tracking (with in-memory fallback).
 4. **Token Budgeting:** Uses sliding window context (last 10 turns) and per-message truncation to stay safely within free-tier OpenRouter token limits.
 5. **Bulletproof Feedback JSON:** If the LLM times out or fails on the final 8th turn, the backend gracefully catches it and generates a dynamic fallback JSON so the UI never crashes.

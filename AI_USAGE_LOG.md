@@ -53,7 +53,7 @@ This log documents all AI-assisted steps taken during the development of this pr
 ### Session 9 — Model Fallback & Input Safety
 **Tool:** Antigravity (Gemini)
 **Prompt intent:** Fixed hardcoded free model slugs that returned 404 (models rotated off OpenRouter). Added per-message input truncation to prevent exceeding free-tier input token ceiling mid-interview.
-**Outcome:** `openrouter/auto` fallback (auto-routes to available free models), `_trim_messages()` caps each message at 300 chars, graceful 502 JSON errors instead of bare 500s.
+**Outcome:** `openrouter/free` fallback (auto-routes to available free models), `_trim_messages()` caps each message at 300 chars, graceful 502 JSON errors instead of bare 500s.
 
 ### Session 10 — End-to-End Verification
 **Tool:** Antigravity (Gemini)
@@ -65,7 +65,7 @@ This log documents all AI-assisted steps taken during the development of this pr
 ## Model Used at Runtime
 - **LLM Gateway:** OpenRouter (`openrouter.ai`) — routes to any model via OpenAI-compatible API
 - **Primary model:** `anthropic/claude-opus-4-5` (configurable via `OPENROUTER_MODEL` env var)
-- **Fallback:** `openrouter/auto` — auto-selects best available model
+- **Fallback:** `openrouter/free` — auto-selects best available model
 - **Feedback generator:** Same model, separate API call after interview completion
 
 ## Session Persistence
@@ -78,7 +78,7 @@ This log documents all AI-assisted steps taken during the development of this pr
 3. **Feedback JSON reliability** — AI suggested stripping markdown fences from LLM output + a graceful fallback for JSON parse failures.
 4. **MAX_QUESTIONS = 8** — Set to meet hackathon minimum requirement of 8 questions covering 4+ curriculum days.
 5. **Token budget management** — AI designed the sliding window + per-message truncation strategy to stay within free-tier limits.
-6. **Model fallback chain** — AI recommended `openrouter/auto` over hardcoded free slugs that rotate frequently.
+6. **Model fallback chain** — AI recommended `openrouter/free` over hardcoded free slugs that rotate frequently.
 
 ---
 
