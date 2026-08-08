@@ -105,8 +105,7 @@ interview-agent/
 ## 🔐 Environment Variables
 
 | Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENROUTER_API_KEY` | ✅ | — | Your OpenRouter API key |
-| `OPENROUTER_MODEL` | ❌ | `anthropic/claude-opus-4-5` | Override the primary LLM |
+| :--- | :---: | :--- | :--- |
+| `GEMINI_API_KEY` | ✅ | — | Your Google AI Studio API key |
 | `BREETH_API_KEY` | ❌ | — | Enable Breeth session persistence |
 | `BREETH_PROJECT_ID` | ❌ | `interview-agent` | Scope for Breeth episodes |
