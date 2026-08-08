@@ -23,7 +23,9 @@ from openai import AsyncOpenAI
 
 # ─── Constants ─────────────────────────────────────────────────────────────────
 
-MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-opus-4-5")
+# Primary model: Ultra-cheap, fast, reliable model for judge testing (costs fractions of a cent)
+# Requires a few $ in OpenRouter credits to act as insurance against free-tier overload.
+MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash")
 MAX_QUESTIONS = 8          # Minimum 8 questions covering at least 4 curriculum days
 _PRIMER = "Please begin the interview now."
 
