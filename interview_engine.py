@@ -167,7 +167,9 @@ RULES:
 def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
     # Build transcript (skip system + primer messages)
     lines = []
-    for msg in history:
+    # Trim messages to ensure the feedback prompt doesn't blow the token limit
+    trimmed_history = _trim_messages(history)
+    for msg in trimmed_history:
         if msg["role"] == "system":
             continue
         if msg.get("content") == _PRIMER:
@@ -175,6 +177,7 @@ def _build_feedback_prompt(s: dict, history: list[dict]) -> str:
         speaker = "Interviewer" if msg["role"] == "assistant" else s["name"]
         lines.append(f"**{speaker}:** {msg['content']}")
     transcript = "\n\n".join(lines)
+
 
     return f"""You reviewed a technical interview for the following candidate.
 
@@ -287,20 +290,19 @@ async def _generate_feedback(session: dict) -> dict:
     """Dedicated OpenRouter call for structured post-interview feedback."""
     prompt = _build_feedback_prompt(session["strategy"], session["history"])
 
-    raw = await _chat(
-        [{"role": "user", "content": prompt}],
-        max_tokens=250,
-    )
-    raw = raw.strip()
-
-    # Strip markdown code fences if the model wraps JSON in them
-    if raw.startswith("```"):
-        lines = raw.splitlines()
-        raw = "\n".join(lines[1:-1])
-
     try:
+        raw = await _chat(
+            [{"role": "user", "content": prompt}],
+            max_tokens=250,
+        )
+        raw = raw.strip()
+        # Strip markdown code fences if the model wraps JSON in them
+        if raw.startswith("```"):
+            lines = raw.splitlines()
+            raw = "\n".join(lines[1:-1])
         return json.loads(raw)
-    except json.JSONDecodeError:
+    except Exception as e:
+        print(f"[interview_engine] Feedback generation failed: {e}. Falling back to default JSON.")
         s = session["strategy"]
         return {
             "summary": (
