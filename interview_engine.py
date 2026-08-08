@@ -79,6 +79,13 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
             content = resp.choices[0].message.content
             if not content:
                 raise ValueError("Model returned empty or None content.")
+            
+            # Strip out leaked reasoning tags (e.g. from DeepSeek-R1 models)
+            import re
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+            if not content:
+                raise ValueError("Model returned only reasoning and no actual reply.")
+                
             return str(content)
         except Exception as e:
             last_err = e
