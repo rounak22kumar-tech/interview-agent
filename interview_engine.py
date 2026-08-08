@@ -66,10 +66,14 @@ async def _chat(messages: list[dict], max_tokens: int = 200) -> str:
     
     # Determine fallback based on the endpoint being used
     base = os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1")
-    fallback = "gemini-1.5-flash" if "googleapis.com" in base else "openrouter/free"
-    
-    # Also clean up the primary model name if hitting Google directly
-    primary_model = MODEL.replace("google/", "") if "googleapis.com" in base else MODEL
+    # Clean up the model names for Google AI Studio which requires exact aliases
+    if "googleapis.com" in base:
+        primary_model = "gemini-1.5-flash-latest"
+        fallback = "gemini-1.5-flash-latest"
+    else:
+        primary_model = MODEL
+        fallback = "openrouter/free"
+        
     models_to_try = [primary_model, fallback]
     # Create a list of 6 attempts (trying the primary and fallback 3 times each to survive intermittent network errors)
     attempts = models_to_try * 3
