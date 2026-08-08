@@ -34,8 +34,7 @@ _OR_HEADERS = {
 
 FALLBACK_MODELS = [
     MODEL,
-    "google/gemini-2.0-flash-lite-001",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/auto",     # OpenRouter's auto-router picks the best available free model
 ]
 
 
@@ -203,6 +202,22 @@ Write a structured feedback report. Return ONLY a valid JSON object — no markd
 Be specific — reference actual topics. Honest and constructive."""
 
 
+# ─── Input Token Safety ────────────────────────────────────────────────────────
+
+_MAX_MSG_CHARS = 300  # ~75 tokens per message — keeps 10 msgs under ~750 tokens
+
+
+def _trim_messages(messages: list[dict]) -> list[dict]:
+    """Truncate individual messages to prevent exceeding input token ceiling."""
+    trimmed = []
+    for m in messages:
+        content = m.get("content", "")
+        if len(content) > _MAX_MSG_CHARS:
+            content = content[:_MAX_MSG_CHARS] + "..."
+        trimmed.append({"role": m["role"], "content": content})
+    return trimmed
+
+
 # ─── Session Lifecycle ─────────────────────────────────────────────────────────
 
 async def start_interview(candidate: dict) -> tuple[str, dict]:
@@ -253,7 +268,9 @@ async def continue_interview(
     system_msg = {"role": "system", "content": system_content}
     dialogue = [m for m in session["history"] if m["role"] != "system" and m.get("content") != _PRIMER]
     recent_dialogue = dialogue[-10:]
-    api_messages = [system_msg] + recent_dialogue
+
+    # Truncate individual messages to prevent blowing input token ceiling
+    api_messages = [system_msg] + _trim_messages(recent_dialogue)
 
     reply = await _chat(api_messages, max_tokens=200)
     session["history"].append({"role": "assistant", "content": reply})

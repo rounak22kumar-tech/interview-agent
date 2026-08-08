@@ -104,7 +104,10 @@ async def interview(req: InterviewRequest):
                 status_code=400,
                 detail="The first request must include the 'candidate' object.",
             )
-        reply, session = await interview_engine.start_interview(req.candidate)
+        try:
+            reply, session = await interview_engine.start_interview(req.candidate)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"LLM service error: {e}")
         session_store.set_session(req.sessionId, session)
         return InterviewResponse(reply=reply, done=False)
 
@@ -122,7 +125,10 @@ async def interview(req: InterviewRequest):
             detail="Ongoing sessions require a 'message' field.",
         )
 
-    reply, done, feedback = await interview_engine.continue_interview(session, req.message)
+    try:
+        reply, done, feedback = await interview_engine.continue_interview(session, req.message)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM service error: {e}")
     session_store.set_session(req.sessionId, session)
 
     if done:
