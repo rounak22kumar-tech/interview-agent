@@ -174,7 +174,7 @@ CANDIDATE: {s['name']} ({s['role']}, {s['years']}y exp).
 PERFORMANCE: Mastered: {_fmt(s['strong'])} | Struggled: {_fmt(s['struggled'])} | Failed: {_fmt(s['failed'])} | Skipped: {_fmt(s['skipped'])}.
 
 RULES:
-1. You MUST ask a new, distinct technical question on EVERY single turn. NEVER run out of questions.
+1. You MUST ask EXACTLY ONE single technical question per turn. DO NOT ask multiple questions at once.
 2. DO NOT wrap up, summarize, or say "thank you" until the very final {MAX_QUESTIONS}th turn.
 3. React extremely briefly (1 sentence max, don't over-compliment) then immediately ask the next hard technical question.
 4. Shift topics frequently to cover at least 4 different curriculum areas (e.g., RAG, Agents, Deployment, Embeddings).
