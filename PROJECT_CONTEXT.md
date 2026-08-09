@@ -171,7 +171,7 @@ FeedbackModel:     summary (str), strengths (list[str]), gaps (list[str]), next 
 ### ✅ Working
 - Server starts cleanly (`uvicorn main:app --reload --port 8000`)
 - Candidate list loads in UI
-- Interview starts (welcome message from Claude)
+- Interview starts (welcome message from Gemini)
 - Multi-turn conversation works
 - Model fallback chain works
 - Strict filtering of exact UI error strings injected by the user (protects live flow & feedback)
@@ -185,7 +185,7 @@ FeedbackModel:     summary (str), strengths (list[str]), gaps (list[str]), next 
 | Issue | Severity | Details |
 |-------|----------|---------|
 | **Gemini Free-Tier Rate Limits** | MEDIUM | Can hit 429 Too Many Requests if multiple users test simultaneously. Handled by client-side retry, but can still fail. |
-| **Breeth 403 Forbidden** | MEDIUM | `POST /v1/episodes` returns 403. The key (`ck_live_XrrfF2yC0yYidJe_...`) is set but the endpoint rejects writes. Likely needs a project created in Breeth dashboard first, or the API payload format differs. **App works fine via in-memory fallback.** |
+| **Breeth 403 Forbidden** | MEDIUM | `POST /v1/episodes` returns 403. The key (`ck_live_...`) is set but the endpoint rejects writes. Likely needs a project created in Breeth dashboard first, or the API payload format differs. **App works fine via in-memory fallback.** |
 | **`requirements.txt` includes `supabase`** | LOW | We switched to Breeth but `supabase==2.7.4` is still in requirements. It installs but isn't used. Can be removed to reduce install time. |
 
 ### Git History (key commits)
@@ -253,7 +253,7 @@ GitHub: https://github.com/rounak22kumar-tech/interview-agent
 
 ### Key API Keys (in `.env`, gitignored)
 - Gemini: `AIza...` (free tier)
-- Breeth: `ck_live_XrrfF2yC0yYi...` (hackathon access)
+- Breeth: `ck_live_...` (hackathon access)
 
 ---
 

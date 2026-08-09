@@ -24,14 +24,6 @@ app = FastAPI(
     description="LLM-driven adaptive interviewer for AI Cohort graduates.",
 )
 
-@app.get("/debug/models")
-async def get_models():
-    import httpx
-    key = os.environ.get("GEMINI_API_KEY", os.environ.get("OPENROUTER_API_KEY", "")).strip()
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={key}")
-        return resp.json()
-
 # ── Security: Restrict CORS to known origins ──
 app.add_middleware(
     CORSMiddleware,
