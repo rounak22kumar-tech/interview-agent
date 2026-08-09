@@ -73,9 +73,9 @@ This log documents all AI-assisted steps taken during the development of this pr
 ---
 
 ## Model Used at Runtime
-- **LLM Gateway:** OpenRouter (`openrouter.ai`) — routes to any model via OpenAI-compatible API
-- **Primary model:** `anthropic/claude-opus-4-5` (configurable via `OPENROUTER_MODEL` env var)
-- **Fallback:** `openrouter/free` — auto-selects best available model
+- **LLM Gateway:** Gemini API (Google AI Studio) — Native REST API integration via `httpx`
+- **Primary model:** `gemini-3.5-flash-lite` (Fast and reliable for hackathon testing)
+- **Fallback:** Auto-retries on network errors; falls back to raw JSON parsing if structured generation fails
 - **Feedback generator:** Same model, separate API call after interview completion
 
 ## Session Persistence
@@ -87,8 +87,8 @@ This log documents all AI-assisted steps taken during the development of this pr
 2. **Stateless API design** — AI helped reason through sessionId-keyed state management without a persistent DB.
 3. **Feedback JSON reliability** — AI suggested stripping markdown fences from LLM output + a graceful fallback for JSON parse failures.
 4. **MAX_QUESTIONS = 8** — Set to meet hackathon minimum requirement of 8 questions covering 4+ curriculum days.
-5. **Token budget management** — AI designed the sliding window + per-message truncation strategy to stay within free-tier limits.
-6. **Model fallback chain** — AI recommended `openrouter/free` over hardcoded free slugs that rotate frequently.
+5. **Token budget management** — AI designed the sliding window + per-message truncation strategy to keep payloads small and fast for the Gemini API.
+6. **Model architecture shift** — AI migrated the app from an OpenAI SDK / OpenRouter setup directly to a pure REST client for the Gemini API to resolve rate limiting issues.
 7. **Defense-in-depth substring removal** — AI designed the regex filter that precisely matches static UI errors while preserving candidate technical answers before and after the system error.
 
 ---
