@@ -80,6 +80,11 @@ This log documents all AI-assisted steps taken during the development of this pr
 **Prompt intent:** Prevent the free-tier Render application from spinning down (cold starts take 50+ seconds) right when a judge might test the URL.
 **Outcome:** Created a GitHub Actions workflow (`.github/workflows/keepalive.yml`) that automatically pings the `/health` endpoint every 10 minutes, ensuring the app is always instantly responsive.
 
+### Session 15 — Security Hardening & API Key Rotation
+**Tool:** Antigravity (Gemini)
+**Prompt intent:** Secure the application before final submission by eliminating potential attack vectors and scrubbing exposed API key fragments from commit history.
+**Outcome:** Deleted an unauthenticated `/debug/models` route in `main.py` that acted as an open proxy to the Gemini API. Redacted all key fragments from `PROJECT_CONTEXT.md` and guided the process of rotating live provider keys (Gemini and Breeth) to invalidate any previously exposed data against scraping bots.
+
 ---
 
 ## Model Used at Runtime
