@@ -70,6 +70,11 @@ This log documents all AI-assisted steps taken during the development of this pr
 **Prompt intent:** Ensure candidate skips are properly registered and evaluate how the system handles dynamic errors pasted mid-sentence.
 **Outcome:** Added `test_skip.py`, `test_filter.py`, and `test_live_error_paste.py` verifying full end-to-end reliability against adversarial edge cases.
 
+### Session 13 — Advanced Debugging & Silent Data Loss Prevention
+**Tool:** Claude (claude.ai)
+**Prompt intent:** Reviewed the initial error-handling logic for stripping system errors (like Google API 429 limits) from candidate feedback. 
+**Outcome:** Claude identified a critical "silent data loss" bug where using `string.split()` would accidentally delete legitimate candidate answers that followed an error string. Claude proposed the exact `re.sub` regex pattern to safely remove only the error span while preserving the candidate's actual text before and after. Claude also independently verified hackathon submission guidelines regarding team registration.
+
 ---
 
 ## Model Used at Runtime
