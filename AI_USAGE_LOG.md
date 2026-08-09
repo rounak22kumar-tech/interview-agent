@@ -75,6 +75,11 @@ This log documents all AI-assisted steps taken during the development of this pr
 **Prompt intent:** Reviewed the initial error-handling logic for stripping system errors (like Google API 429 limits) from candidate feedback. 
 **Outcome:** Claude identified a critical "silent data loss" bug where using `string.split()` would accidentally delete legitimate candidate answers that followed an error string. Claude proposed the exact `re.sub` regex pattern to safely remove only the error span while preserving the candidate's actual text before and after. Claude also independently verified hackathon submission guidelines regarding team registration.
 
+### Session 14 — Render Keep-Alive Cron
+**Tool:** Antigravity (Gemini)
+**Prompt intent:** Prevent the free-tier Render application from spinning down (cold starts take 50+ seconds) right when a judge might test the URL.
+**Outcome:** Created a GitHub Actions workflow (`.github/workflows/keepalive.yml`) that automatically pings the `/health` endpoint every 10 minutes, ensuring the app is always instantly responsive.
+
 ---
 
 ## Model Used at Runtime
