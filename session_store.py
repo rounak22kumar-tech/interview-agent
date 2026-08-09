@@ -75,7 +75,7 @@ def _read_from_breeth(session_id: str) -> Optional[dict]:
         "project_id": BREETH_PROJECT,
         "limit":      1,
     }
-    with httpx.Client(timeout=8) as client:
+    with httpx.Client(timeout=30) as client:
         resp = client.post(f"{BREETH_BASE}/search", headers=_headers(), json=payload)
         resp.raise_for_status()
 

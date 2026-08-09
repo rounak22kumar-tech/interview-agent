@@ -7,7 +7,7 @@ import json
 import sys
 import time
 
-BASE = "https://interview-agent-nmlc.onrender.com"
+BASE = "http://localhost:8005"
 SESSION_ID = f"e2e-test-{int(time.time())}"
 
 # Load first candidate
@@ -29,8 +29,7 @@ ANSWERS = [
     "I deployed using Docker containers on a cloud platform with health checks.",
 ]
 
-# Increase timeout drastically to accommodate Render cold starts + LLM retries
-client = httpx.Client(base_url=BASE, timeout=120.0)
+client = httpx.Client(base_url=BASE, timeout=30)
 
 # Step 1: Start interview
 print("[1/10] Starting interview...")
@@ -55,10 +54,7 @@ for i, answer in enumerate(ANSWERS, start=1):
     data = r.json()
     print(f"  Status: {r.status_code}")
     print(f"  done: {data['done']}")
-    try:
-        print(f"  reply: {data['reply'][:100]}...")
-    except UnicodeEncodeError:
-        print(f"  reply: {data['reply'][:100].encode('ascii', 'ignore').decode('ascii')}...")
+    print(f"  reply: {data['reply'][:100]}...")
 
     if i < 8:
         assert data["done"] == False, f"Turn {i} should not be done yet"
