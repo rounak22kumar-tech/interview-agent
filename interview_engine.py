@@ -1,10 +1,9 @@
 """
 Core interview engine — candidate analysis, Claude prompt construction, session lifecycle.
 
-LLM Backend: OpenRouter (openrouter.ai)
-  - OpenAI-compatible API → drop-in for any OpenAI SDK usage
-  - Routes to any model: anthropic/claude-opus-4-5, openai/gpt-4o, google/gemini-pro, etc.
-  - Set OPENROUTER_API_KEY + OPENROUTER_MODEL in .env
+LLM Backend: Gemini API (Google AI Studio)
+  - Native REST API (httpx)
+  - Requires GEMINI_API_KEY in .env
 
 Adaptive logic:
   strong    → passed on 1st attempt  → probe deeper (tradeoffs, architecture)
@@ -19,24 +18,15 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from openai import AsyncOpenAI
-
 # ─── Constants ─────────────────────────────────────────────────────────────────
 
-# Primary model: Ultra-cheap, fast, reliable model for judge testing (costs fractions of a cent)
-# Requires a few $ in OpenRouter credits to act as insurance against free-tier overload.
+# Primary model: Ultra-cheap, fast, reliable model for judge testing
 MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash")
 MAX_QUESTIONS = 8          # Minimum 8 questions covering at least 4 curriculum days
 _PRIMER = "Please begin the interview now."
 
-_OR_HEADERS = {
-    "HTTP-Referer": "https://github.com/interview-agent",
-    "X-Title": "AI Interview Agent",
-}
-
 FALLBACK_MODELS = [
     MODEL,
-    "openrouter/free",     # OpenRouter's free-router picks the best available free model
 ]
 
 

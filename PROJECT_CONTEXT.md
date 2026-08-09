@@ -40,15 +40,14 @@ Response: { "reply": "Thank you...", "done": true, "feedback": { "summary": "...
 | Layer | Technology | Why |
 |-------|-----------|-----|
 | **Backend** | FastAPI (Python) | Async, fast, auto-docs |
-| **LLM** | OpenRouter API (`openai` SDK) | Routes to Claude/GPT/Gemini/Llama via single key |
+| **LLM** | Gemini API (Google AI Studio) | Free-tier capable native REST (`httpx`) API |
 | **Session Store** | Breeth API + in-memory fallback | Breeth = hackathon sponsor prize ("Best Use of Breeth") |
 | **Frontend** | Vanilla HTML/CSS/JS (dark mode) | Single `static/index.html`, no build step |
 | **Deployment Config** | `render.yaml` (Render.com blueprint) | One-click deploy |
 
 ### Environment Variables (`.env`)
 ```env
-OPENROUTER_API_KEY=sk-or-v1-...          # REQUIRED — get from openrouter.ai
-OPENROUTER_MODEL=anthropic/claude-opus-4-5  # default model
+GEMINI_API_KEY=AIza...                   # REQUIRED — get from Google AI Studio
 BREETH_API_KEY=ck_live_...               # OPTIONAL — session persistence
 BREETH_PROJECT_ID=interview-agent        # OPTIONAL — Breeth project scope
 ```
@@ -102,16 +101,13 @@ interview-agent/
 ### 4.2 `interview_engine.py` — Core Engine (309 lines)
 
 **Constants:**
-- `MODEL` = from env, default `anthropic/claude-opus-4-5`
 - `MAX_QUESTIONS = 8`
-- `FALLBACK_MODELS` = [primary, gemini-flash-lite, llama-3.3-70b:free]
 
 **Key Functions:**
 
 | Function | Purpose |
 |----------|---------|
-| `_get_client()` | Lazy singleton `AsyncOpenAI` client pointed at OpenRouter |
-| `_chat(messages, max_tokens=200)` | Wrapper with automatic model fallback on error |
+| `_chat(messages, max_tokens=200)` | Native Google AI Studio REST API call (httpx) with auto-retries |
 | `analyze_candidate(candidate)` | Parses missions into strategy: strong/efficient/struggled/failed/skipped |
 | `_sanitize_message(content)` | Regex strips dynamic UI error substrings without deleting candidate answers |
 | `_build_system_prompt(strategy)` | Compact system prompt (~200 tokens) with interview rules |
@@ -133,13 +129,12 @@ skipped   → not attempted          → ask why, gauge current awareness
 - System prompt is reconstructed fresh each turn (not from history[0])
 - Dialogue = all non-system, non-primer messages from history
 - Only last 10 dialogue messages sent to LLM (`dialogue[-10:]`)
-- This prevents exceeding OpenRouter free-tier token limits
+- This keeps payloads small and fast for the Gemini free tier
 
 **max_tokens settings:**
 - `start_interview`: 200
 - `continue_interview`: 200
 - `_generate_feedback`: 250
-- These are calibrated for OpenRouter free tier (~400 token output ceiling)
 
 ### 4.3 `session_store.py` — Persistence (125 lines)
 
@@ -189,10 +184,8 @@ FeedbackModel:     summary (str), strengths (list[str]), gaps (list[str]), next 
 
 | Issue | Severity | Details |
 |-------|----------|---------|
-| **OpenRouter free-tier token limits** | HIGH | Free accounts have ~400 output token ceiling and ~3,550 input token ceiling per request. We've mitigated this with `max_tokens=200` and sliding window context, but long candidate answers can still push over the input limit. |
+| **Gemini Free-Tier Rate Limits** | MEDIUM | Can hit 429 Too Many Requests if multiple users test simultaneously. Handled by client-side retry, but can still fail. |
 | **Breeth 403 Forbidden** | MEDIUM | `POST /v1/episodes` returns 403. The key (`ck_live_XrrfF2yC0yYidJe_...`) is set but the endpoint rejects writes. Likely needs a project created in Breeth dashboard first, or the API payload format differs. **App works fine via in-memory fallback.** |
-| **Fallback models invalid** | LOW | `google/gemini-2.0-flash-lite-001` returns 404 (no endpoints found). `meta-llama/llama-3.3-70b-instruct:free` returns 404 (not available for free). Need to find valid free model slugs on OpenRouter. |
-| **Full 8-question end-to-end not confirmed** | MEDIUM | We haven't completed a full 8-question interview with feedback generation due to repeated token limit issues. Needs testing. |
 | **`requirements.txt` includes `supabase`** | LOW | We switched to Breeth but `supabase==2.7.4` is still in requirements. It installs but isn't used. Can be removed to reduce install time. |
 
 ### Git History (key commits)
@@ -239,7 +232,7 @@ uvicorn main:app --reload --port 8000
 ## 8. Hackathon Scoring Context
 
 ### Tools Requested by User (for integration/mention)
-- **OpenRouter** ✅ — LLM gateway (implemented)
+- **Gemini API** ✅ — LLM gateway (implemented natively via REST)
 - **Breeth** ⚠️ — session memory (integrated but 403 on writes)
 - **Supabase** — was in plan, replaced by Breeth
 - **Railway** — deployment target (not deployed yet)
@@ -259,7 +252,7 @@ All source files are in: `C:\Users\Rounak Kumar\.gemini\antigravity\scratch\inte
 GitHub: https://github.com/rounak22kumar-tech/interview-agent
 
 ### Key API Keys (in `.env`, gitignored)
-- OpenRouter: `sk-or-v1-4f4ee98a...` (free tier, limited credits)
+- Gemini: `AIza...` (free tier)
 - Breeth: `ck_live_XrrfF2yC0yYi...` (hackathon access)
 
 ---
